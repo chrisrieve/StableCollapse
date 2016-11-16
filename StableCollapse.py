@@ -7,19 +7,24 @@ Created on Mon Sep 19 17:08:09 2016
 """
 
 
-# import os
+import os
 import sys
 
-# TODO: Create guardian statements
-# - Make sure it is a .do file
-# - Make sure the file exists
-# TODO: Make big league (main function) function to run other functions
 # TODO: Check if data is already sorted
 # TODO: Work with bysort statements
 # TODO: Work with gsort statements
 # TODO: Add more usage statistics
 
 do_file = sys.argv[1]
+
+# Guardians
+if not do_file.endswith('.do'):
+    print 'Stable Collapse only works on Stata .do files.'
+    sys.exit(0)
+
+if not os.path.isfile(do_file):
+    print "File '", do_file, "' does not exist"
+    sys.exit(0)
 
 
 def read_file(filename):
@@ -44,10 +49,14 @@ def find_stata_command(txt, cmd):
     return cmd_lines
 
 
-def find_sort(line_num):
-    by_start = line_num.find("by")
-    end_by = line_num.find(r')', by_start)
-    sort_list = line_num[by_start + 3:end_by]
+def find_sort(line_num, cmd):
+    if cmd == 'collapse':
+        by_start = line_num.find("by")
+        end_by = line_num.find(r')', by_start)
+        sort_list = line_num[by_start + 3:end_by]
+    if cmd == 'sort':
+        start = line_num.find(' ')
+        sort_list = line_num[start + 1:]
     return sort_list.split()
 
 
@@ -60,8 +69,12 @@ def find_cmd_line(cmd_line, do_c):
     return do_c.index(cmd_line)
 
 
-def insert_sort(do_c, stable, cmd_line_num):
-    do_c.insert(cmd_line_num, stable[0])
+def insert_sort(do_c, stable, cmd_line_num, cmd):
+    if cmd == "collapse":
+        do_c.insert(cmd_line_num, stable[0])
+    if cmd == "sort":
+        do_c[cmd_line_num] = stable[0]
+    return do_c
 
 
 def create_friends(new_do, cmd_line_num):
@@ -78,10 +91,10 @@ def write_file(filename, txt):
 def big_league(command, dcont):
     command_lines = find_stata_command(dcont, command)
     for command_line in command_lines:
-        sorted_by = find_sort(command_line)
+        sorted_by = find_sort(command_line, command)
         stabalized = sort_stably(sorted_by, command_line)
         command_line_num = find_cmd_line(command_line, dcont)
-        insert_sort(dcont, stabalized, command_line_num)
+        dcont = insert_sort(dcont, stabalized, command_line_num, command)
         create_friends(dcont, command_line_num)
     return dcont
 

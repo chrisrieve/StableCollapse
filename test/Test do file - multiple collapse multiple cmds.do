@@ -1,7 +1,6 @@
 use "data.dta", clear
 * Hey There! Just a friendly reminder to ALWAYS SORT STABLY.
-sort rt sku yea, stable
-sort sku year
+sort year sku, stable
 describe
 egen total = total(*)
 * Hey There! Just a friendly reminder to ALWAYS SORT STABLY.
